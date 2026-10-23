@@ -1,0 +1,17 @@
+# 路由器部署：docker compose up -d
+# 访问：http://<路由器IP>:3030/?token=<日志中的令牌>
+# 取令牌：docker compose logs | grep -o 'token=[^ ]*'
+services:
+  zcode:
+    image: ghcr.io/xixka/zcode-web:latest
+    ports:
+      - "3030:3030"
+    volumes:
+      - zcode-data:/data                  # 登录态/会话，必须持久化
+      - /mnt/usb/project:/workspace       # AI 要操作的代码目录（外接盘/NAS，勿放 flash 分区）
+    restart: unless-stopped
+    # 内存紧张的路由器可按需限制并预留 swap：
+    # mem_limit: 1g
+
+volumes:
+  zcode-data:
