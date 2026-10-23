@@ -11,6 +11,9 @@ RUN mkdir -p /opt/zcode /data /workspace \
     && rm /tmp/zcode-*.tar.gz
 
 ENV ZCODE_DATA_BASE_DIR=/data
+# 登录态/凭据写入 $ZCODE_DATA_BASE_DIR/.zcode；setting.json 走 homedir()，
+# 设 HOME=/data 使所有运行时数据（含 UI 设置）都落在 /data 卷。
+ENV HOME=/data
 
 EXPOSE 3030
 

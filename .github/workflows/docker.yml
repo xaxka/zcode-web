@@ -50,7 +50,15 @@ jobs:
       - name: Bootstrap workspace
         run: |
           cd zcode-src
-          HUSKY=0 CI=1 ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ pnpm bootstrap
+          HUSKY=0 CI=1 pnpm bootstrap
+
+      # packages/shared 是纯 TS 源码包（无 build 脚本），
+      # 但 SEA/TUI 资产打包要求其 dist/index.js 存在，须手动编译。
+      # 已在本地（Node 24.14.0 + pnpm 10.33.2）实测验证。
+      - name: Build @zcode/shared dist (required by SEA TUI staging)
+        run: |
+          cd zcode-src
+          pnpm exec tsc -b packages/shared/tsconfig.json
 
       - name: Build zcode runtime tarball
         run: |
