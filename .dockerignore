@@ -1,0 +1,5 @@
+# docker build 的上下文只需要 tar.gz；排除仓库与源码树，避免向 daemon 发送 GB 级无用数据
+.git
+.github
+zcode-src
+*.md

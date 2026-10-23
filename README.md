@@ -4,6 +4,10 @@
 
 镜像 `ghcr.io/xixka/zcode-web` 由 GitHub Actions 从 [zai-org/ZCode](https://github.com/zai-org/ZCode) 官方源码构建（amd64 / arm64 双架构），包含完整 Web 工作台与 Agent 运行时。
 
+- 镜像体积：约 150MB（压缩，已剔除 sourcemap 与非 Linux 平台二进制）
+- 空闲内存：约 200MB；任务执行时 Agent 进程另增约 150~300MB
+- 基础镜像：`node:24.14.0-slim`（Debian glibc；alpine 的 musl 与原生模块 prebuilds 不兼容）
+
 ## 镜像
 
 | Tag | 说明 |
