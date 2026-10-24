@@ -25,13 +25,14 @@ COPY --from=unpack /opt/zcode /opt/zcode
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# ---- Web 模式宿主身份补丁（3.16.2）----
-# zcode --web（standalone-server）把项目宿主 ID 从容器 ID 派生（remote:server:<容器ID>），
-# 与 Web UI 的 "local" 寻址不一致：创建项目报 project.host-offline / host-immutable，
-# 新建任务报 task-group.created-task-unavailable；且每次容器重建身份都会变，
-# 历史任务/项目全部失联。固定为 "local" 一次解决三类问题。
-# 上游若修改此处代码，本步骤构建失败以提醒重新适配。
-RUN node -e 'const fs=require("fs");const F="/opt/zcode/server/entry-http.js";let s=fs.readFileSync(F,"utf8");const re=/const projectStorageHostId = remoteHostIdFromWorkspaceIdentity\(\s*buildServerRemoteWorkspaceIdentity\(\{ serverId: options2\.sourceServerId, workspacePath: "\/" \}\)\s*\);/;if(!re.test(s)){console.error("host identity patch site not found - upstream changed");process.exit(1)}fs.writeFileSync(F,s.replace(re,"const projectStorageHostId = \"local\";"))'
+# ---- Web 模式官方缺陷补丁（3.16.2，见 patches/fix-web-server.js）----
+# ① 宿主身份固定为 local：官方从容器 ID 派生 remote:server:<容器ID>，与 Web UI 的
+#   "local" 寻址不一致（host-offline / host-immutable / 分组失败），且容器重建后身份
+#   漂移导致历史任务失联；② 补注册桌面版专有的 window-controller 通道：无头服务端
+#   缺失该通道导致任务归档/置顶/重命名/删除全部失败，事件缺失还会导致页面白屏。
+# 上游若修改锚点代码，本步骤构建失败以提醒重新适配。
+COPY patches/fix-web-server.js /tmp/fix-web-server.js
+RUN node /tmp/fix-web-server.js && rm /tmp/fix-web-server.js
 
 ENV ZCODE_DATA_BASE_DIR=/data
 # 登录态/凭据写入 $ZCODE_DATA_BASE_DIR/.zcode；setting.json 走 homedir()，
