@@ -35,7 +35,6 @@ EXPOSE 3030
 # 入口脚本：首次启动生成 telemetry deviceMid（官方 bug #681 的 workaround），再拉起服务
 ENTRYPOINT ["docker-entrypoint.sh"]
 
-# 不传 --no-token：host 为 0.0.0.0 时运行时自动生成访问令牌并打印到日志
-CMD ["node", "/opt/zcode/bin/zcode.mjs", "--web", \
-     "--host", "0.0.0.0", "--port", "3030", \
-     "--workspace", "/workspace", "--no-open"]
+# 不传 --no-token：host 为 0.0.0.0 时运行时自动生成访问令牌并打印到日志；
+# 设 ZCODE_WEB_TOKEN 环境变量可固定令牌（重启不变，URL 稳定）
+CMD ["sh", "-c", "exec node /opt/zcode/bin/zcode.mjs --web --host 0.0.0.0 --port 3030 --workspace /workspace --no-open $(if [ -n \"$ZCODE_WEB_TOKEN\" ]; then printf -- '--token %s' \"$ZCODE_WEB_TOKEN\"; fi)"]

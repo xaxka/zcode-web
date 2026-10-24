@@ -57,6 +57,8 @@ docker compose logs | grep -o 'http://[^ ]*token=[^ ]*' | head -1
 
 浏览器打开输出的 `http://<路由器IP>:3030/?token=...`。
 
+> 令牌默认每次启动随机生成。要固定令牌（重启后 URL 不变），在 compose 中设 `ZCODE_WEB_TOKEN=<你的令牌>`；直接 `docker run` 则在命令末尾加 `--token <你的令牌>`。令牌请勿设置过弱或留空，该端口等同于一个可执行命令的 AI Agent。
+
 ### 4. 登录模型
 
 界面左下角「连接使用」→ 选 **连接 Z.ai** 或 **连接 BigModel**（国内推荐）完成 OAuth，或填 API Key。需订阅 GLM Coding Plan 才有可用额度。

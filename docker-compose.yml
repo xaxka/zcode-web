@@ -6,6 +6,8 @@ services:
     image: ghcr.io/xixka/zcode-web:latest
     ports:
       - "3030:3030"
+    environment:
+      - ZCODE_WEB_TOKEN=change-me   # 固定访问令牌（重启不变）；删除此行则每次启动随机生成
     volumes:
       - zcode-data:/data                  # 登录态/会话，必须持久化
       - /mnt/usb/project:/workspace       # AI 要操作的代码目录（外接盘/NAS，勿放 flash 分区）
