@@ -22,6 +22,8 @@ RUN mkdir -p /opt/zcode \
 FROM ${NODE_IMAGE}
 RUN mkdir -p /data /workspace
 COPY --from=unpack /opt/zcode /opt/zcode
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 ENV ZCODE_DATA_BASE_DIR=/data
 # 登录态/凭据写入 $ZCODE_DATA_BASE_DIR/.zcode；setting.json 走 homedir()，
@@ -29,6 +31,9 @@ ENV ZCODE_DATA_BASE_DIR=/data
 ENV HOME=/data
 
 EXPOSE 3030
+
+# 入口脚本：首次启动生成 telemetry deviceMid（官方 bug #681 的 workaround），再拉起服务
+ENTRYPOINT ["docker-entrypoint.sh"]
 
 # 不传 --no-token：host 为 0.0.0.0 时运行时自动生成访问令牌并打印到日志
 CMD ["node", "/opt/zcode/bin/zcode.mjs", "--web", \
