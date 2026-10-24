@@ -97,3 +97,4 @@ docker compose pull && docker compose up -d
 | 内存不足被 OOM kill | compose 中加 `mem_limit`，关闭路由器不必要的服务 |
 | 拉取镜像慢 | 路由器侧可配置镜像加速，或从 Actions Artifact 下载 tar.gz 自行构建 |
 | 免费套餐/编程套餐显示「未就绪」，界面提示无可用模型 | 官方 bug（[zai-org/feedback #681](https://github.com/zai-org/feedback/issues/681)）：全新安装不会生成 `~/.zcode/v2/telemetry-state.json`，套餐校验请求缺 `X-Device-Mid` 头被 zcode.z.ai 拒为 400。镜像入口脚本已自动生成 deviceMid；旧镜像手动修复：`docker exec zcode sh -c 'printf "{\"deviceMid\":\"$(cat /proc/sys/kernel/random/uuid)\"}" > /data/.zcode/v2/telemetry-state.json' && docker restart zcode` |
+| 创建项目报错 / 新建任务提示「分组操作失败」 | 官方 bug（3.16.2 Web 模式）：服务端宿主 ID 从容器 ID 派生，与 UI 的 `local` 寻址不匹配（host-offline / host-immutable / created-task-unavailable），且容器重建后身份漂移导致历史任务失联。镜像已在构建时打补丁固定宿主为 `local`；旧容器需换新镜像 |

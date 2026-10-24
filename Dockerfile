@@ -25,6 +25,14 @@ COPY --from=unpack /opt/zcode /opt/zcode
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
+# ---- Web 模式宿主身份补丁（3.16.2）----
+# zcode --web（standalone-server）把项目宿主 ID 从容器 ID 派生（remote:server:<容器ID>），
+# 与 Web UI 的 "local" 寻址不一致：创建项目报 project.host-offline / host-immutable，
+# 新建任务报 task-group.created-task-unavailable；且每次容器重建身份都会变，
+# 历史任务/项目全部失联。固定为 "local" 一次解决三类问题。
+# 上游若修改此处代码，本步骤构建失败以提醒重新适配。
+RUN node -e 'const fs=require("fs");const F="/opt/zcode/server/entry-http.js";let s=fs.readFileSync(F,"utf8");const re=/const projectStorageHostId = remoteHostIdFromWorkspaceIdentity\(\s*buildServerRemoteWorkspaceIdentity\(\{ serverId: options2\.sourceServerId, workspacePath: "\/" \}\)\s*\);/;if(!re.test(s)){console.error("host identity patch site not found - upstream changed");process.exit(1)}fs.writeFileSync(F,s.replace(re,"const projectStorageHostId = \"local\";"))'
+
 ENV ZCODE_DATA_BASE_DIR=/data
 # 登录态/凭据写入 $ZCODE_DATA_BASE_DIR/.zcode；setting.json 走 homedir()，
 # 设 HOME=/data 使所有运行时数据（含 UI 设置）都落在 /data 卷。
