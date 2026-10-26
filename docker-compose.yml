@@ -1,5 +1,5 @@
-# 路由器部署：docker compose up -d
-# 访问：http://<路由器IP>:3030/?token=<日志中的令牌>
+# Docker 部署：docker compose up -d
+# 访问：http://<主机IP>:3030/?token=<日志中的令牌>
 # 取令牌：docker compose logs | grep -o 'token=[^ ]*'
 services:
   zcode:
@@ -10,9 +10,9 @@ services:
       - ZCODE_WEB_TOKEN=change-me   # 固定访问令牌（重启不变）；删除此行则每次启动随机生成
     volumes:
       - zcode-data:/data                  # 登录态/会话，必须持久化
-      - /mnt/usb/project:/workspace       # AI 要操作的代码目录（外接盘/NAS，勿放 flash 分区）
+      - /mnt/usb/project:/workspace       # AI 要操作的代码目录（建议外接盘/NAS/数据盘，勿放系统盘/flash 分区）
     restart: unless-stopped
-    # 内存紧张的路由器可按需限制并预留 swap：
+    # 内存紧张的设备可按需限制并预留 swap：
     # mem_limit: 1g
 
 volumes:

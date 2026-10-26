@@ -1,6 +1,6 @@
-# ZCode Web（智谱 AI 编程工作台）路由器部署
+# ZCode Web（智谱 AI 编程工作台）Docker 部署
 
-在无图形界面的 ARM64 路由器上，通过 Docker 运行 ZCode 官方命令行发行包（`zcode --web`，纯 Node 服务，无 Electron / GUI 依赖），浏览器访问 `http://<路由器IP>:3030`。
+通过 Docker 运行 ZCode 官方命令行发行包（`zcode --web`，纯 Node 服务，无 Electron / GUI 依赖），浏览器访问 `http://<主机IP>:3030`。适用于服务器、NAS、软路由等无图形界面的设备（amd64 / arm64 双架构）。
 
 镜像 `ghcr.io/xaxka/zcode-web` 由 GitHub Actions 从 [zai-org/ZCode](https://github.com/zai-org/ZCode) 官方源码构建（amd64 / arm64 双架构），包含完整 Web 工作台与 Agent 运行时。
 
@@ -12,18 +12,18 @@
 
 | Tag | 说明 |
 | --- | --- |
-| `ghcr.io/xaxka/zcode-web:latest` | 多架构（amd64 + arm64），路由器直接拉取 |
+| `ghcr.io/xaxka/zcode-web:latest` | 多架构（amd64 + arm64），直接拉取 |
 | `ghcr.io/xaxka/zcode-web:<version>` | 指定 ZCode 版本 |
 | `ghcr.io/xaxka/zcode-web:latest-arm64` | 仅 ARM64 |
 
-## 路由器部署步骤
+## Docker 部署步骤
 
 ### 1. 预检（任一不满足则停止）
 
 ```bash
-uname -m        # 必须输出 aarch64/arm64（armv7/32 位 ARM 不支持）
+uname -m        # 输出 aarch64/arm64 或 x86_64（armv7/32 位 ARM 不支持）
 docker version  # 确认可用
-df -h           # 数据分区剩余空间 ≥ 1.5GB
+df -h           # 磁盘剩余空间 ≥ 1.5GB
 free -m         # 总内存 ≥ 1GB（低于 512MB 停止）
 ```
 
@@ -40,7 +40,7 @@ services:
       - "3030:3030"
     volumes:
       - zcode-data:/data
-      - /mnt/usb/project:/workspace   # 改为你的外接盘代码目录
+      - /mnt/usb/project:/workspace   # 改为你的代码目录（本地路径/外接盘/NAS 均可）
     restart: unless-stopped
 volumes:
   zcode-data:
@@ -55,7 +55,7 @@ docker compose up -d
 docker compose logs | grep -o 'http://[^ ]*token=[^ ]*' | head -1
 ```
 
-浏览器打开输出的 `http://<路由器IP>:3030/?token=...`。
+浏览器打开输出的 `http://<主机IP>:3030/?token=...`。
 
 > 令牌默认每次启动随机生成。要固定令牌（重启后 URL 不变），在 compose 中设 `ZCODE_WEB_TOKEN=<你的令牌>`；直接 `docker run` 则在命令末尾加 `--token <你的令牌>`。令牌请勿设置过弱或留空，该端口等同于一个可执行命令的 AI Agent。
 
@@ -76,12 +76,12 @@ docker compose logs | grep -o 'http://[^ ]*token=[^ ]*' | head -1
 ## 硬性要求
 
 - **禁止** `--no-token` 裸奔 —— 该端口等于开放一个可执行命令的 AI Agent
-- **禁止**把工作区数据放在路由器 flash 分区，一律用 USB / NAS 分区
+- **禁止**把工作区数据放在系统盘 / flash 分区（空间小且掉电易损），一律用数据盘 / USB / NAS 分区
 - 令牌丢失：`docker compose logs | grep token` 重新获取
 
 ## 升级
 
-ZCode 发新版后，手动触发 [Build 工作流](../../actions/workflows/docker.yml)（`Run workflow`）重新构建镜像，然后在路由器上：
+ZCode 发新版后，手动触发 [Build 工作流](../../actions/workflows/docker.yml)（`Run workflow`）重新构建镜像，然后在部署机上：
 
 ```bash
 docker compose pull && docker compose up -d
@@ -94,7 +94,7 @@ docker compose pull && docker compose up -d
 | 现象 | 处理 |
 | --- | --- |
 | 启动报 lib 丢失 | 镜像基于 `node:24.14.0-slim`（glibc），勿换 alpine |
-| 内存不足被 OOM kill | compose 中加 `mem_limit`，关闭路由器不必要的服务 |
-| 拉取镜像慢 | 路由器侧可配置镜像加速，或从 Actions Artifact 下载 tar.gz 自行构建 |
+| 内存不足被 OOM kill | compose 中加 `mem_limit`，关闭不必要的服务 |
+| 拉取镜像慢 | 可配置 Docker registry mirror 镜像加速，或从 Actions Artifact 下载 tar.gz 自行构建 |
 | 免费套餐/编程套餐显示「未就绪」，界面提示无可用模型 | 官方 bug（[zai-org/feedback #681](https://github.com/zai-org/feedback/issues/681)）：全新安装不会生成 `~/.zcode/v2/telemetry-state.json`，套餐校验请求缺 `X-Device-Mid` 头被 zcode.z.ai 拒为 400。镜像入口脚本已自动生成 deviceMid；旧镜像手动修复：`docker exec zcode sh -c 'printf "{\"deviceMid\":\"$(cat /proc/sys/kernel/random/uuid)\"}" > /data/.zcode/v2/telemetry-state.json' && docker restart zcode` |
 | 创建项目报错 / 新建任务提示「分组操作失败」/ 归档、置顶、重命名任务失败 / 页面白屏 | 官方 bug（3.16.2 Web 模式，两个）：① 服务端宿主 ID 从容器 ID 派生，与 UI 的 `local` 寻址不匹配，且容器重建后身份漂移导致历史任务失联；② 无头服务端缺少桌面版专有的 `window-controller` 通道，任务列表操作全部静默失败，事件缺失导致白屏。镜像已在构建时统一打补丁（见 `patches/fix-web-server.js`）；旧容器需换新镜像 |

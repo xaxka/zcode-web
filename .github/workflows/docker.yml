@@ -2,7 +2,7 @@ name: Build ZCode Web Docker Image
 
 # 从 zai-org/ZCode 官方源码构建 CLI 发行包（纯 Node 运行时），
 # 打成 Docker 镜像推送 ghcr.io。
-# 路由器为 ARM64，公共仓库可免费使用原生 arm64 runner，无需 QEMU。
+# 需覆盖 arm64 架构（NAS/软路由等场景），公共仓库可免费使用原生 arm64 runner，无需 QEMU。
 on:
   push:
     branches: [master, main]
