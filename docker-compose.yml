@@ -3,7 +3,7 @@
 # 取令牌：docker compose logs | grep -o 'token=[^ ]*'
 services:
   zcode:
-    image: ghcr.io/xixka/zcode-web:latest
+    image: ghcr.io/xaxka/zcode-web:latest
     ports:
       - "3030:3030"
     environment:
